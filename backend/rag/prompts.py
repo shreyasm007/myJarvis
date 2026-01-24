@@ -97,21 +97,31 @@ def build_rag_prompt(context: str, question: str) -> str:
     )
 
 
-def build_messages(context: str, question: str) -> list:
+def build_messages(context: str, question: str, chat_history: list = None) -> list:
     """
     Build the complete message list for LLM.
     
     Args:
         context: Retrieved context from vector store
         question: User's question
+        chat_history: Previous conversation messages for context
         
     Returns:
         List of message dicts for LLM API
     """
-    return [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_rag_prompt(context, question)},
-    ]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    
+    # Add conversation history if provided
+    if chat_history:
+        messages.extend(chat_history)
+    
+    # Add current question with RAG context
+    messages.append({
+        "role": "user",
+        "content": build_rag_prompt(context, question)
+    })
+    
+    return messages
 
 
 def get_fallback_response(fallback_type: str = "no_context") -> str:

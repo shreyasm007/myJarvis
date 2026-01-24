@@ -10,6 +10,19 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+class ChatMessage(BaseModel):
+    """Single message in conversation history."""
+    
+    role: str = Field(
+        ...,
+        description="Message role: 'user' or 'assistant'",
+    )
+    content: str = Field(
+        ...,
+        description="Message content",
+    )
+
+
 class ChatRequest(BaseModel):
     """Request model for chat endpoint."""
     
@@ -23,6 +36,10 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = Field(
         default=None,
         description="Optional conversation ID for tracking",
+    )
+    chat_history: Optional[List['ChatMessage']] = Field(
+        default_factory=list,
+        description="Previous conversation messages for context",
     )
 
 

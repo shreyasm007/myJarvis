@@ -70,6 +70,7 @@ class APIClient:
         self,
         message: str,
         conversation_id: Optional[str] = None,
+        chat_history: Optional[list] = None,
     ) -> Dict[str, Any]:
         """
         Send a chat message to the backend.
@@ -77,6 +78,7 @@ class APIClient:
         Args:
             message: User message
             conversation_id: Optional conversation ID
+            chat_history: Optional conversation history [{"role": "user/assistant", "content": "..."}]
             
         Returns:
             Chat response with answer and sources
@@ -84,7 +86,8 @@ class APIClient:
         try:
             payload = {
                 "message": message,
-                "conversation_id": conversation_id or "streamlit-session"
+                "conversation_id": conversation_id or "streamlit-session",
+                "chat_history": chat_history or []
             }
             response = self.client.post(
                 f"{self.base_url}/api/v1/chat",

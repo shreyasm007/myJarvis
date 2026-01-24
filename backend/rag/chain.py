@@ -49,6 +49,7 @@ class RAGChain:
         self,
         query: str,
         conversation_id: Optional[str] = None,
+        chat_history: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
         """
         Process a user query through the complete RAG pipeline.
@@ -56,6 +57,7 @@ class RAGChain:
         Args:
             query: User's question
             conversation_id: Optional conversation ID for tracking
+            chat_history: Optional list of previous messages [{"role": "user/assistant", "content": "..."}]
             
         Returns:
             Dictionary with response, conversation_id, sources, and contexts
@@ -82,8 +84,12 @@ class RAGChain:
                     "contexts": [],
                 }
             
-            # Build messages for LLM
-            messages = build_messages(context=context, question=query)
+            # Build messages for LLM with conversation history
+            messages = build_messages(
+                context=context,
+                question=query,
+                chat_history=chat_history or []
+            )
             
             # Generate response
             response = self.llm_client.generate(messages)

@@ -68,11 +68,18 @@ async def chat(request: ChatRequest, http_request: Request):
     logger.info(f"Received chat request (conversation_id={conversation_id})")
     
     try:
+        # Convert chat history to dict format
+        chat_history = [
+            {"role": msg.role, "content": msg.content}
+            for msg in request.chat_history
+        ] if request.chat_history else []
+        
         # Process query through RAG chain
         rag_chain = get_rag_chain()
         result = rag_chain.process_query(
             query=request.message,
             conversation_id=conversation_id,
+            chat_history=chat_history,
         )
         
         response_text = result["response"]

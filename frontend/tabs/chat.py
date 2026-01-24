@@ -47,9 +47,18 @@ def render_chat_tab(settings: dict):
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
-                    # Call backend API
+                    # Prepare chat history (exclude current message)
+                    chat_history = [
+                        {"role": msg["role"], "content": msg["content"]}
+                        for msg in st.session_state.messages[:-1]  # Exclude the just-added user message
+                    ]
+                    
+                    # Call backend API with conversation history
                     api_client = get_api_client()
-                    response_data = api_client.chat(message=prompt)
+                    response_data = api_client.chat(
+                        message=prompt,
+                        chat_history=chat_history
+                    )
                     
                     response = response_data.get("response", "No response received")
                     sources = response_data.get("sources", [])
