@@ -70,8 +70,8 @@ class Settings(BaseSettings):
         description="Number of documents to retrieve",
     )
     rag_score_threshold: float = Field(
-        default=0.7,
-        description="Minimum similarity score for retrieval",
+        default=0.3,
+        description="Minimum similarity score for retrieval (0.3=permissive, 0.5=balanced, 0.7=strict)",
     )
     
     # Application Settings
