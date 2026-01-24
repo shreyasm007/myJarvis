@@ -168,12 +168,26 @@ def ingest_documents() -> int:
     embeddings_client = get_embeddings_client()
     vectorstore_client = get_vectorstore_client()
     
+    # Delete existing collection if it exists
+    print("\n🗑️  Deleting existing collection...")
+    logger.info("Deleting existing collection to start fresh")
+    try:
+        vectorstore_client.delete_collection()
+        print("✅ Existing data deleted successfully")
+        logger.info("Successfully deleted existing collection")
+    except Exception as e:
+        # Collection might not exist, which is fine
+        print("ℹ️  No existing collection to delete (starting fresh)")
+        logger.info(f"No existing collection found or deletion not needed: {str(e)}")
+    
     # Get embedding dimension
     embedding_dim = embeddings_client.get_embedding_dimension()
     logger.info(f"Embedding dimension: {embedding_dim}")
     
-    # Ensure collection exists
+    # Create fresh collection
+    print("\n📦 Creating fresh collection...")
     vectorstore_client.ensure_collection_exists(embedding_dim)
+    logger.info("Created new collection")
     
     # Process each document
     all_chunks = []
