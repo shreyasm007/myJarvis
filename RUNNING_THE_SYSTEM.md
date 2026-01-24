@@ -23,6 +23,17 @@
 
 ## Starting the System
 
+### Prerequisites
+
+**Optional but recommended: Redis** for embedding caching (speeds up responses 5-10x)
+
+```powershell
+# Quick start with Docker
+docker run -d -p 6379:6379 --name myjarvis-redis redis:latest
+```
+
+See [REDIS_SETUP.md](REDIS_SETUP.md) for detailed Redis installation instructions.
+
 ### Step 1: Start Backend (FastAPI)
 
 ```powershell

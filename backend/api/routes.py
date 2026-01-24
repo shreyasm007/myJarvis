@@ -170,11 +170,18 @@ async def chat_stream(request: ChatRequest, http_request: Request):
         sources = []
         
         try:
+            # Convert chat history to dict format
+            chat_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.chat_history
+            ] if request.chat_history else []
+            
             rag_chain = get_rag_chain()
             
             for chunk, is_final, conv_id, chunk_sources in rag_chain.process_query_stream(
                 query=request.message,
                 conversation_id=conversation_id,
+                chat_history=chat_history,
             ):
                 if chunk:
                     full_response += chunk

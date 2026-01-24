@@ -137,6 +137,7 @@ class RAGChain:
         self,
         query: str,
         conversation_id: Optional[str] = None,
+        chat_history: Optional[List[Dict[str, str]]] = None,
     ) -> Generator[Tuple[str, bool, Optional[str], List[Source]], None, None]:
         """
         Process a user query with streaming response.
@@ -144,6 +145,7 @@ class RAGChain:
         Args:
             query: User's question
             conversation_id: Optional conversation ID for tracking
+            chat_history: Optional list of previous messages
             
         Yields:
             Tuples of (chunk, is_final, conversation_id, sources)
@@ -172,8 +174,12 @@ class RAGChain:
                 yield (fallback, True, conversation_id, [])
                 return
             
-            # Build messages for LLM
-            messages = build_messages(context=context, question=query)
+            # Build messages for LLM with conversation history
+            messages = build_messages(
+                context=context,
+                question=query,
+                chat_history=chat_history or []
+            )
             
             # Build source list
             sources = [

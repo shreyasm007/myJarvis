@@ -7,6 +7,7 @@ Handles LLM inference using Groq API with streaming support.
 from typing import AsyncGenerator, List, Optional
 
 from groq import Groq
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from backend.config import get_settings
 from backend.core.exceptions import LLMError
@@ -35,6 +36,14 @@ class LLMClient:
         
         logger.info(f"Initialized LLMClient with model: {self.model}")
     
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type((Exception,)),
+        before_sleep=lambda retry_state: logger.warning(
+            f"LLM call failed, retrying... (attempt {retry_state.attempt_number}/3)"
+        ),
+    )
     def generate(
         self,
         messages: List[dict],
@@ -42,7 +51,7 @@ class LLMClient:
         temperature: Optional[float] = None,
     ) -> str:
         """
-        Generate a response from the LLM.
+        Generate a response from the LLM with automatic retry on failure.
         
         Args:
             messages: List of message dicts with 'role' and 'content'
@@ -53,7 +62,7 @@ class LLMClient:
             Generated response text
             
         Raises:
-            LLMError: If generation fails
+            LLMError: If generation fails after retries
         """
         try:
             logger.debug(f"Generating response with {len(messages)} messages")

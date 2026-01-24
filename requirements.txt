@@ -20,6 +20,11 @@ aiofiles>=24.1.0
 # Logging
 python-json-logger>=2.0.7
 
+# Retry logic and caching
+tenacity>=9.0.0
+redis>=7.0.0
+hiredis>=3.0.0
+
 # Document processing (for ingestion)
 tiktoken>=0.7.0
 pypdf>=5.1.0

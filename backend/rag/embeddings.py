@@ -1,11 +1,14 @@
 """
 Voyage AI embeddings client.
 
-Handles text embedding generation using Voyage AI API.
+Handles text embedding generation using Voyage AI API with Redis caching.
 """
 
-from typing import List
+import hashlib
+import json
+from typing import List, Optional
 
+import redis
 import voyageai
 
 from backend.config import get_settings
@@ -16,18 +19,48 @@ logger = get_logger(__name__)
 
 
 class EmbeddingsClient:
-    """Client for generating embeddings using Voyage AI."""
+    """Client for generating embeddings using Voyage AI with Redis caching."""
     
-    def __init__(self):
-        """Initialize the Voyage AI client."""
+    def __init__(self, use_cache: bool = True, redis_url: Optional[str] = None):
+        """Initialize the Voyage AI client with optional Redis cache.
+        
+        Args:
+            use_cache: Enable Redis caching (default: True)
+            redis_url: Redis connection URL (default: localhost:6379)
+        """
         settings = get_settings()
         self.client = voyageai.Client(api_key=settings.voyage_api_key)
         self.model = settings.voyage_model
-        logger.info(f"Initialized EmbeddingsClient with model: {self.model}")
+        self.use_cache = use_cache
+        
+        # Initialize Redis cache
+        if use_cache:
+            try:
+                redis_url = redis_url or "redis://localhost:6379/0"
+                self.redis_client = redis.from_url(
+                    redis_url,
+                    decode_responses=False,  # Store binary data
+                    socket_connect_timeout=2,
+                )
+                # Test connection
+                self.redis_client.ping()
+                logger.info(f"Initialized EmbeddingsClient with model: {self.model} (Redis cache enabled)")
+            except Exception as e:
+                logger.warning(f"Redis cache unavailable, falling back to no cache: {e}")
+                self.use_cache = False
+                self.redis_client = None
+        else:
+            self.redis_client = None
+            logger.info(f"Initialized EmbeddingsClient with model: {self.model} (cache disabled)")
+    
+    def _get_cache_key(self, text: str, input_type: str) -> str:
+        """Generate cache key for text embedding."""
+        content = f"{self.model}:{input_type}:{text}"
+        return f"emb:{hashlib.sha256(content.encode()).hexdigest()}"
     
     def embed_text(self, text: str, input_type: str = "query") -> List[float]:
         """
-        Generate embedding for a single text.
+        Generate embedding for a single text with Redis caching.
         
         Args:
             text: Text to embed
@@ -39,6 +72,18 @@ class EmbeddingsClient:
         Raises:
             EmbeddingError: If embedding generation fails
         """
+        # Check cache first
+        if self.use_cache and self.redis_client:
+            try:
+                cache_key = self._get_cache_key(text, input_type)
+                cached = self.redis_client.get(cache_key)
+                if cached:
+                    embedding = json.loads(cached)
+                    logger.debug(f"Cache hit for embedding (type={input_type})")
+                    return embedding
+            except Exception as e:
+                logger.warning(f"Cache read failed: {e}")
+        
         try:
             logger.debug(f"Generating embedding for text (type={input_type}): {text[:100]}...")
             
@@ -50,6 +95,19 @@ class EmbeddingsClient:
             
             embedding = result.embeddings[0]
             logger.debug(f"Generated embedding with dimension: {len(embedding)}")
+            
+            # Cache the result (TTL: 7 days for queries, 30 days for documents)
+            if self.use_cache and self.redis_client:
+                try:
+                    cache_key = self._get_cache_key(text, input_type)
+                    ttl = 604800 if input_type == "query" else 2592000  # 7d or 30d
+                    self.redis_client.setex(
+                        cache_key,
+                        ttl,
+                        json.dumps(embedding)
+                    )
+                except Exception as e:
+                    logger.warning(f"Cache write failed: {e}")
             
             return embedding
             
