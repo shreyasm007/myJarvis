@@ -1,0 +1,45 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Git
+.git/
+.gitignore
+
+# Environment files (secrets added via HF Spaces)
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs (created at runtime)
+logs/
+*.log
+
+# Data files (ingested separately)
+backend/data/documents/
+
+# Scripts (not needed in container)
+scripts/
+
+# Test files
+widget/test.html
+
+# Documentation
+*.md
+!README.md
+
+# OS files
+.DS_Store
+Thumbs.db
