@@ -178,12 +178,12 @@ class VectorStoreClient:
         try:
             logger.debug(f"Searching for top {top_k} similar documents")
             
-            results = self.client.search(
+            results = self.client.query_points(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
+                query=query_embedding,
                 limit=top_k,
                 score_threshold=score_threshold,
-            )
+            ).points
             
             # Format results
             formatted_results = []
@@ -221,9 +221,9 @@ class VectorStoreClient:
             info = self.client.get_collection(self.collection_name)
             return {
                 "name": self.collection_name,
-                "vectors_count": info.vectors_count,
+                "vectors_count": info.vectors_count if hasattr(info, 'vectors_count') else info.points_count,
                 "points_count": info.points_count,
-                "status": info.status.value,
+                "status": info.status,
             }
         except UnexpectedResponse as e:
             if "404" in str(e) or "Not found" in str(e):
