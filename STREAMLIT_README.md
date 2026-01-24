@@ -8,6 +8,24 @@
 📁 **Document Management** - Check ingested documents and database status  
 ⚙️ **Live Settings** - Change LLM model, temperature, and retrieval parameters on-the-fly
 
+## Project Structure
+
+```
+myJarvis/
+├── app.py                      # Main Streamlit entry point
+├── frontend/                   # Modular frontend package
+│   ├── __init__.py
+│   ├── config.py              # Configuration and constants
+│   ├── utils.py               # Utility functions
+│   ├── sidebar.py             # Sidebar component
+│   └── tabs/                  # Tab components
+│       ├── __init__.py
+│       ├── chat.py            # Chat interface
+│       ├── logs.py            # Log viewer
+│       ├── analytics.py       # Analytics dashboard
+│       └── documents.py       # Document management
+```
+
 ## Quick Start
 
 ```powershell
@@ -17,7 +35,7 @@
 .venv\Scripts\activate
 
 # Run Streamlit
-streamlit run streamlit_app.py
+streamlit run app.py
 ```
 
 The UI will open at `http://localhost:8501`
