@@ -17,6 +17,10 @@ from backend.api.routes import router
 from backend.config import get_settings
 from backend.core.exceptions import RAGException
 from backend.core.logging_config import get_logger, setup_logging
+from backend.core.proxy_config import configure_proxy
+
+# Configure proxy first (if needed)
+configure_proxy()
 
 # Initialize logging
 settings = get_settings()

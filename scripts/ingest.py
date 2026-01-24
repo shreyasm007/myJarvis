@@ -23,6 +23,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv(project_root / ".env")
 
+# Configure proxy BEFORE importing API clients
+from backend.core.proxy_config import configure_proxy
+configure_proxy()
+
 from backend.core.exceptions import DocumentIngestionError
 from backend.core.logging_config import get_logger, setup_logging
 from backend.rag.embeddings import get_embeddings_client
