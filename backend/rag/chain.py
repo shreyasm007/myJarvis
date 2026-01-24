@@ -5,15 +5,16 @@ Coordinates the complete RAG pipeline: query embedding,
 document retrieval, context building, and LLM response generation.
 """
 
-from typing import Generator, List, Optional, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple
 from uuid import uuid4
 
 from backend.api.schemas import Source
 from backend.core.exceptions import RAGException
 from backend.core.logging_config import get_logger
-from backend.rag.llm import get_llm_client
+from backend.rag.embeddings import EmbeddingsClient
+from backend.rag.llm import LLMClient, get_llm_client
 from backend.rag.prompts import build_messages, get_fallback_response
-from backend.rag.retriever import get_retriever
+from backend.rag.retriever import Retriever, get_retriever
 
 logger = get_logger(__name__)
 
@@ -21,10 +22,26 @@ logger = get_logger(__name__)
 class RAGChain:
     """Orchestrates the complete RAG pipeline."""
     
-    def __init__(self):
-        """Initialize the RAG chain with retriever and LLM client."""
-        self.retriever = get_retriever()
-        self.llm_client = get_llm_client()
+    def __init__(
+        self,
+        retriever: Optional[Retriever] = None,
+        llm_client: Optional[LLMClient] = None,
+        embeddings_client: Optional[EmbeddingsClient] = None,
+        model_name: Optional[str] = None,
+        temperature: float = 0.7,
+    ):
+        """
+        Initialize the RAG chain with retriever and LLM client.
+        
+        Args:
+            retriever: Optional custom retriever instance
+            llm_client: Optional custom LLM client instance
+            embeddings_client: Optional embeddings client (for custom retriever)
+            model_name: Optional custom model name
+            temperature: LLM temperature setting
+        """
+        self.retriever = retriever or get_retriever()
+        self.llm_client = llm_client or get_llm_client(model_name=model_name, temperature=temperature)
         
         logger.info("Initialized RAGChain")
     
@@ -32,7 +49,7 @@ class RAGChain:
         self,
         query: str,
         conversation_id: Optional[str] = None,
-    ) -> Tuple[str, str, List[Source]]:
+    ) -> Dict[str, Any]:
         """
         Process a user query through the complete RAG pipeline.
         
@@ -41,7 +58,7 @@ class RAGChain:
             conversation_id: Optional conversation ID for tracking
             
         Returns:
-            Tuple of (response, conversation_id, sources)
+            Dictionary with response, conversation_id, sources, and contexts
         """
         # Generate conversation ID if not provided
         if not conversation_id:
@@ -58,11 +75,12 @@ class RAGChain:
             # Check if we have relevant context
             if not context:
                 logger.info("No relevant context found, returning fallback")
-                return (
-                    get_fallback_response("no_context"),
-                    conversation_id,
-                    [],
-                )
+                return {
+                    "response": get_fallback_response("no_context"),
+                    "conversation_id": conversation_id,
+                    "sources": [],
+                    "contexts": [],
+                }
             
             # Build messages for LLM
             messages = build_messages(context=context, question=query)
@@ -85,22 +103,29 @@ class RAGChain:
                 f"with {len(sources)} sources"
             )
             
-            return response, conversation_id, sources
+            return {
+                "response": response,
+                "conversation_id": conversation_id,
+                "sources": sources,
+                "contexts": raw_results,  # Full contexts for debugging
+            }
             
         except RAGException as e:
             logger.error(f"RAG pipeline error: {e.message}", extra=e.details)
-            return (
-                get_fallback_response("error"),
-                conversation_id,
-                [],
-            )
+            return {
+                "response": get_fallback_response("error"),
+                "conversation_id": conversation_id,
+                "sources": [],
+                "contexts": [],
+            }
         except Exception as e:
             logger.error(f"Unexpected error in RAG pipeline: {str(e)}")
-            return (
-                get_fallback_response("error"),
-                conversation_id,
-                [],
-            )
+            return {
+                "response": get_fallback_response("error"),
+                "conversation_id": conversation_id,
+                "sources": [],
+                "contexts": [],
+            }
     
     def process_query_stream(
         self,

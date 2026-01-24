@@ -10,8 +10,8 @@ from typing import List, Optional, Tuple
 from backend.config import get_settings
 from backend.core.exceptions import RetrievalError
 from backend.core.logging_config import get_logger
-from backend.rag.embeddings import get_embeddings_client
-from backend.rag.vectorstore import get_vectorstore_client
+from backend.rag.embeddings import EmbeddingsClient, get_embeddings_client
+from backend.rag.vectorstore import VectorStoreClient, get_vectorstore_client
 
 logger = get_logger(__name__)
 
@@ -19,14 +19,28 @@ logger = get_logger(__name__)
 class Retriever:
     """Retrieves relevant documents for a given query."""
     
-    def __init__(self):
-        """Initialize the retriever with embedding and vector store clients."""
-        self.embeddings_client = get_embeddings_client()
-        self.vectorstore_client = get_vectorstore_client()
+    def __init__(
+        self,
+        embeddings_client: Optional[EmbeddingsClient] = None,
+        vectorstore_client: Optional[VectorStoreClient] = None,
+        top_k: Optional[int] = None,
+        score_threshold: Optional[float] = None,
+    ):
+        """
+        Initialize the retriever with embedding and vector store clients.
+        
+        Args:
+            embeddings_client: Optional custom embeddings client
+            vectorstore_client: Optional custom vectorstore client
+            top_k: Optional custom top_k value
+            score_threshold: Optional custom score threshold
+        """
+        self.embeddings_client = embeddings_client or get_embeddings_client()
+        self.vectorstore_client = vectorstore_client or get_vectorstore_client()
         
         settings = get_settings()
-        self.top_k = settings.rag_top_k
-        self.score_threshold = settings.rag_score_threshold
+        self.top_k = top_k if top_k is not None else settings.rag_top_k
+        self.score_threshold = score_threshold if score_threshold is not None else settings.rag_score_threshold
         
         logger.info(
             f"Initialized Retriever with top_k={self.top_k}, "
@@ -160,14 +174,34 @@ class Retriever:
 _retriever = None
 
 
-def get_retriever() -> Retriever:
+def get_retriever(
+    embeddings_client: Optional[EmbeddingsClient] = None,
+    vectorstore_client: Optional[VectorStoreClient] = None,
+    top_k: Optional[int] = None,
+    score_threshold: Optional[float] = None,
+) -> Retriever:
     """
     Get the singleton retriever instance.
     
+    Args:
+        embeddings_client: Optional custom embeddings client
+        vectorstore_client: Optional custom vectorstore client
+        top_k: Optional custom top_k value
+        score_threshold: Optional custom score threshold
+        
     Returns:
         Retriever instance
     """
     global _retriever
+    # Create new instance if parameters are provided (non-singleton mode for custom settings)
+    if embeddings_client or vectorstore_client or top_k is not None or score_threshold is not None:
+        return Retriever(
+            embeddings_client=embeddings_client,
+            vectorstore_client=vectorstore_client,
+            top_k=top_k,
+            score_threshold=score_threshold,
+        )
+    
     if _retriever is None:
         _retriever = Retriever()
     return _retriever

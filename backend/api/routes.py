@@ -70,10 +70,14 @@ async def chat(request: ChatRequest, http_request: Request):
     try:
         # Process query through RAG chain
         rag_chain = get_rag_chain()
-        response_text, conv_id, sources = rag_chain.process_query(
+        result = rag_chain.process_query(
             query=request.message,
             conversation_id=conversation_id,
         )
+        
+        response_text = result["response"]
+        conv_id = result["conversation_id"]
+        sources = result["sources"]
         
         # Calculate duration
         duration_ms = (time.time() - start_time) * 1000

@@ -18,14 +18,20 @@ logger = get_logger(__name__)
 class LLMClient:
     """Client for LLM inference using Groq API."""
     
-    def __init__(self):
-        """Initialize the Groq client."""
+    def __init__(self, model_name: Optional[str] = None, temperature: Optional[float] = None):
+        """
+        Initialize the Groq client.
+        
+        Args:
+            model_name: Optional custom model name
+            temperature: Optional custom temperature
+        """
         settings = get_settings()
         
         self.client = Groq(api_key=settings.groq_api_key)
-        self.model = settings.groq_model
+        self.model = model_name or settings.groq_model
         self.max_tokens = settings.groq_max_tokens
-        self.temperature = settings.groq_temperature
+        self.temperature = temperature if temperature is not None else settings.groq_temperature
         
         logger.info(f"Initialized LLMClient with model: {self.model}")
     
@@ -120,14 +126,22 @@ class LLMClient:
 _llm_client = None
 
 
-def get_llm_client() -> LLMClient:
+def get_llm_client(model_name: Optional[str] = None, temperature: Optional[float] = None) -> LLMClient:
     """
     Get the singleton LLM client instance.
     
+    Args:
+        model_name: Optional custom model name
+        temperature: Optional custom temperature
+        
     Returns:
         LLMClient instance
     """
     global _llm_client
+    # Create new instance if parameters are provided (non-singleton mode for custom settings)
+    if model_name or temperature is not None:
+        return LLMClient(model_name=model_name, temperature=temperature)
+    
     if _llm_client is None:
         _llm_client = LLMClient()
     return _llm_client
