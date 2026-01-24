@@ -2,6 +2,7 @@
 Streamlit Admin Dashboard for RAG Chatbot.
 
 Modular frontend with organized components.
+Frontend communicates with backend via HTTP API only.
 """
 
 import sys
@@ -13,16 +14,7 @@ import streamlit as st
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv(project_root / ".env")
-
-# Configure proxy if needed
-from backend.core.proxy_config import configure_proxy
-configure_proxy()
-
-# Import frontend components
+# Import frontend components (no backend imports!)
 from frontend.config import PAGE_CONFIG, init_session_state, apply_custom_css
 from frontend.sidebar import render_sidebar
 from frontend.tabs.chat import render_chat_tab
@@ -41,6 +33,10 @@ def main():
     
     # Initialize session state
     init_session_state()
+    
+    # Display backend connection status
+    st.sidebar.markdown("---")
+    st.sidebar.caption("🔗 Backend: http://localhost:8000")
     
     # Render sidebar and get settings
     settings = render_sidebar()

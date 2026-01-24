@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import List
 
-from backend.rag.vectorstore import get_vectorstore_client
+from frontend.api_client import get_api_client
 
 
 def load_logs(log_file: str, tail_lines: int = 100, project_root: Path = None) -> List[str]:
@@ -54,17 +54,13 @@ def parse_log_entry(line: str) -> dict:
 
 def get_db_stats() -> dict:
     """
-    Get database statistics from Qdrant.
+    Get database statistics from backend API.
     
     Returns:
         Dictionary with collection statistics
     """
-    try:
-        vectorstore = get_vectorstore_client()
-        info = vectorstore.get_collection_info()
-        return info
-    except Exception as e:
-        return {"error": str(e)}
+    api_client = get_api_client()
+    return api_client.get_stats()
 
 
 def format_context_display(contexts: list) -> str:
