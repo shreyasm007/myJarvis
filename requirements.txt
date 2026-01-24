@@ -22,6 +22,13 @@ python-json-logger>=2.0.7
 
 # Document processing (for ingestion)
 tiktoken>=0.7.0
+pypdf>=5.1.0
+python-docx>=1.1.0
+odfpy>=1.4.1
+striprtf>=0.0.26
+beautifulsoup4>=4.12.0
+lxml>=5.1.0
+python-pptx>=1.0.0
 
 # Streamlit UI
 streamlit>=1.32.0

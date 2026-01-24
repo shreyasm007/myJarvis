@@ -4,12 +4,17 @@ Document ingestion script.
 Reads documents from the data/documents directory,
 chunks them, generates embeddings, and uploads to Qdrant.
 
+Supports: TXT, MD, PDF, DOCX, DOC, ODT, RTF, HTML, CSV, JSON, XML, PPT, PPTX
+
 Usage:
     python -m scripts.ingest
 """
 
+import csv
+import json
 import os
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import List, Tuple
 from uuid import uuid4
@@ -40,7 +45,14 @@ logger = get_logger(__name__)
 DOCUMENTS_DIR = project_root / "backend" / "data" / "documents"
 
 # Supported file extensions
-SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown"}
+SUPPORTED_EXTENSIONS = {
+    ".txt", ".md", ".markdown",  # Text
+    ".pdf",  # PDF
+    ".docx", ".doc", ".odt", ".rtf",  # Word processors
+    ".html", ".htm",  # HTML
+    ".csv", ".json", ".xml",  # Structured data
+    ".ppt", ".pptx",  # PowerPoint
+}
 
 # Chunking settings
 CHUNK_SIZE = 500  # characters
@@ -49,7 +61,7 @@ CHUNK_OVERLAP = 50  # characters
 
 def read_document(file_path: Path) -> str:
     """
-    Read a document file.
+    Read a document file with support for multiple formats.
     
     Args:
         file_path: Path to the document
@@ -58,14 +70,223 @@ def read_document(file_path: Path) -> str:
         Document content as string
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
+        ext = file_path.suffix.lower()
+        
+        # Text files
+        if ext in {".txt", ".md", ".markdown"}:
+            return read_text_file(file_path)
+        
+        # PDF
+        elif ext == ".pdf":
+            return read_pdf(file_path)
+        
+        # Word documents
+        elif ext == ".docx":
+            return read_docx(file_path)
+        
+        # ODT (OpenOffice)
+        elif ext == ".odt":
+            return read_odt(file_path)
+        
+        # RTF
+        elif ext == ".rtf":
+            return read_rtf(file_path)
+        
+        # HTML
+        elif ext in {".html", ".htm"}:
+            return read_html(file_path)
+        
+        # CSV
+        elif ext == ".csv":
+            return read_csv(file_path)
+        
+        # JSON
+        elif ext == ".json":
+            return read_json(file_path)
+        
+        # XML
+        elif ext == ".xml":
+            return read_xml(file_path)
+        
+        # PowerPoint
+        elif ext in {".ppt", ".pptx"}:
+            return read_pptx(file_path)
+        
+        else:
+            logger.warning(f"Unsupported file type: {ext}")
+            return ""
+            
     except Exception as e:
         logger.error(f"Failed to read {file_path}: {str(e)}")
         raise DocumentIngestionError(
             message=f"Failed to read document: {file_path.name}",
             details={"error": str(e)},
         )
+
+
+def read_text_file(file_path: Path) -> str:
+    """Read plain text, markdown files."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def read_pdf(file_path: Path) -> str:
+    """Read PDF files."""
+    try:
+        from pypdf import PdfReader
+        
+        reader = PdfReader(file_path)
+        text = []
+        for page in reader.pages:
+            text.append(page.extract_text())
+        return "\n\n".join(text)
+    except ImportError:
+        logger.error("pypdf not installed. Install with: pip install pypdf")
+        raise
+
+
+def read_docx(file_path: Path) -> str:
+    """Read DOCX files."""
+    try:
+        from docx import Document
+        
+        doc = Document(file_path)
+        text = []
+        for para in doc.paragraphs:
+            if para.text.strip():
+                text.append(para.text)
+        return "\n\n".join(text)
+    except ImportError:
+        logger.error("python-docx not installed. Install with: pip install python-docx")
+        raise
+
+
+def read_odt(file_path: Path) -> str:
+    """Read ODT files."""
+    try:
+        from odf import text as odf_text
+        from odf.opendocument import load
+        
+        doc = load(file_path)
+        paragraphs = doc.getElementsByType(odf_text.P)
+        text = [str(p) for p in paragraphs if str(p).strip()]
+        return "\n\n".join(text)
+    except ImportError:
+        logger.error("odfpy not installed. Install with: pip install odfpy")
+        raise
+
+
+def read_rtf(file_path: Path) -> str:
+    """Read RTF files."""
+    try:
+        from striprtf.striprtf import rtf_to_text
+        
+        with open(file_path, "r", encoding="utf-8") as f:
+            rtf_content = f.read()
+        return rtf_to_text(rtf_content)
+    except ImportError:
+        logger.error("striprtf not installed. Install with: pip install striprtf")
+        raise
+
+
+def read_html(file_path: Path) -> str:
+    """Read HTML files."""
+    try:
+        from bs4 import BeautifulSoup
+        
+        with open(file_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        
+        soup = BeautifulSoup(html_content, "lxml")
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+        
+        return soup.get_text(separator="\n\n", strip=True)
+    except ImportError:
+        logger.error("beautifulsoup4 not installed. Install with: pip install beautifulsoup4 lxml")
+        raise
+
+
+def read_csv(file_path: Path) -> str:
+    """Read CSV files and convert to text."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = []
+        for row in reader:
+            row_text = ", ".join([f"{k}: {v}" for k, v in row.items()])
+            rows.append(row_text)
+        return "\n\n".join(rows)
+
+
+def read_json(file_path: Path) -> str:
+    """Read JSON files and convert to text."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    def json_to_text(obj, prefix=""):
+        """Recursively convert JSON to readable text."""
+        if isinstance(obj, dict):
+            lines = []
+            for k, v in obj.items():
+                if isinstance(v, (dict, list)):
+                    lines.append(f"{prefix}{k}:")
+                    lines.append(json_to_text(v, prefix + "  "))
+                else:
+                    lines.append(f"{prefix}{k}: {v}")
+            return "\n".join(lines)
+        elif isinstance(obj, list):
+            lines = []
+            for i, item in enumerate(obj):
+                lines.append(f"{prefix}Item {i+1}:")
+                lines.append(json_to_text(item, prefix + "  "))
+            return "\n".join(lines)
+        else:
+            return f"{prefix}{obj}"
+    
+    return json_to_text(data)
+
+
+def read_xml(file_path: Path) -> str:
+    """Read XML files and convert to text."""
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+    
+    def xml_to_text(element, prefix=""):
+        """Recursively convert XML to readable text."""
+        lines = []
+        if element.text and element.text.strip():
+            lines.append(f"{prefix}{element.tag}: {element.text.strip()}")
+        else:
+            lines.append(f"{prefix}{element.tag}")
+        
+        for child in element:
+            lines.append(xml_to_text(child, prefix + "  "))
+        
+        return "\n".join(lines)
+    
+    return xml_to_text(root)
+
+
+def read_pptx(file_path: Path) -> str:
+    """Read PowerPoint files."""
+    try:
+        from pptx import Presentation
+        
+        prs = Presentation(file_path)
+        text = []
+        
+        for slide_num, slide in enumerate(prs.slides, 1):
+            slide_text = [f"Slide {slide_num}:"]
+            for shape in slide.shapes:
+                if hasattr(shape, "text") and shape.text.strip():
+                    slide_text.append(shape.text)
+            text.append("\n".join(slide_text))
+        
+        return "\n\n".join(text)
+    except ImportError:
+        logger.error("python-pptx not installed. Install with: pip install python-pptx")
+        raise
 
 
 def chunk_text(
