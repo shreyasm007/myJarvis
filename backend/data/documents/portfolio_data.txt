@@ -1,0 +1,113 @@
+Professional Details
+Personal Information
+	• Name: Shreyas Santosh Mohite
+	• Location: At Po-Tondoli, Kadegaon, Sangli, Maharashtra, India, Pin Code: 415 305
+	• Contact: +91 9172129218
+	• Email: shreyasmohite001@gmail.com
+	• LinkedIn: Shreyas Mohite
+	• LeetCode Profile: Shreyasm007
+	• GeeksforGeeks Profile: shreyasmoe7um
+	• HackerRank Profile: shreyasm007
+
+Educational Background
+Walchand College of Engineering, Sangli (Nov 2020 - Jan 2024)
+	• Degree: Bachelor of Technology (B.Tech) in Computer Science and Engineering
+	• Grade: CGPA - 8.34
+	• Highlights: Core subjects include Data Structures, Algorithms, Machine Learning, Web Development, Operating Systems, Cybersecurity, Artificial Intelligence, Compiler Design, and Theory of Computation.
+	• Extracurricular Activities: Football, GIM & SRO Coordinator at SOFTA
+Ligade Patil Junior College of Science, Karad (Mar 2018 - Jun 2020)
+	• Degree: Higher Secondary Certificate (HSC) in Science
+	• Grade: 95.23% (Mathematics: 100/100)
+	• Key Focus Areas: Physics, Chemistry, Mathematics, Electronics, and Environmental Science.
+Mahatma Gandhi Vidyalaya, Kadegaon (Jun 2012 - Mar 2018)
+	• Degree: Secondary School Certificate (SSC)
+	• Grade: 96.60%
+	• Achievements: Led school football team to district level; participated in handwriting competitions.
+
+Work Experience
+NCS Group
+Associate Engineer (Aug 2024 - Present)
+	• Focused on Generative AI, data scraping, and leveraging Large Language Models (LLMs) to drive innovative solutions.
+	• Actively contributed to a dynamic team environment, delivering impactful project outcomes such as chatbot development and automation tools.
+	• Collaborated with cross-functional teams to develop AI-driven solutions optimizing workflows and improving decision-making processes.
+	• Gained exposure to end-to-end project cycles, fostering strong analytical and organizational skills.
+Emerson Innovation Center, Pune
+Software Developer Intern (Jan 2024 - Aug 2024)
+	• Developed a License Monitoring Tool using the MERN stack for enhanced data visualization.
+	• Collaborated on frontend tasks using Angular and backend development with C# and XAML.
+	• Attended cybersecurity webinars, enhancing knowledge of secure coding practices and compliance standards.
+	• Worked closely with senior developers, gaining valuable mentorship and practical insights.
+
+Technical Skills
+Programming Languages: C, C++, Python, Java, SQL
+Web Development: HTML, CSS, JavaScript, ReactJS, Angular, Bootstrap
+Frameworks: MERN Stack, ExpressJS, LangChain
+Databases: MongoDB, SQL, Firebase, MySQL
+Artificial Intelligence: Generative AI, Large Language Models (LLM), Natural Language Processing (NLP), Prompt Engineering, Generative AI Tools, Language Modeling
+Augmented Reality and Blockchain: Unity, Google ARCore, Augmented Reality (AR), Blockchain
+Software Development and Engineering: Software Engineering Practices, Compiler Design, Operating Systems, Computer Architecture, Cybersecurity, Cybersecurity Incident Response
+Tools: GitHub, Git, VS Code, Visual Studio
+Specializations: Data Structures, Algorithms, Data Scraping, Big Data, Creative Problem Solving, Communication, Pair Programming, Competitive Programming
+Soft Skills: Excellent Communication Skills, Teamwork, Leadership, Time Management, Critical Thinking, Continuous Learning, Professional Growth Mindset
+Other Skills: Coding Standards, Problem Solving, Object-Oriented Programming (OOP), Software Requirements
+Science and Mathematics: Physics, Chemistry, Electronics, Mathematics, Statistics, Environmental Science, Science & Technology
+
+Projects
+	1. Attendance Management System with Dynamic QR
+		○ Duration: Jul 2023 - Jun 2024
+		○ Associated with: Walchand College of Engineering (A Govt. Aided Autonomous Institute), Sangli
+		○ Description: Created a mobile app and web application for attendance tracking, minimizing proxy entries and streamlining the process.
+		○ Impact: Successfully adopted by WCE Sangli, reducing errors in attendance logging.
+		○ Skills: HTML, CSS, JavaScript, Java, Firebase
+		○ Project Link: Attendance Management System using QR Code - Google Drive
+	2. License Monitoring Tool
+		○ Duration: Mar 2024 - May 2024
+		○ Associated with: Emerson
+		○ Description: Developed a MERN stack application enabling management to track licenses with real-time data visualization and insights.
+		○ Impact: Improved data accuracy and decision-making for senior management, reducing manual processes by 30%.
+		○ Skills: MongoDB, Express.js, React.js, Node.js
+		○ GitHub: shreyasm007/proj
+	3. Information Display using Augmented Reality
+		○ Duration: Jun 2022 - Jan 2023
+		○ Associated with: Walchand College of Engineering (A Govt. Aided Autonomous Institute), Sangli
+		○ Description: Developed an AR application for visualizing data on labs and rooms, using 3D AR models to enhance information accessibility.
+		○ Impact: Enhanced user interaction with data within the CSE department, creating an innovative educational tool.
+		○ Skills: Unity, Google ARCore, Augmented Reality (AR)
+
+Certifications
+	1. Generative AI for Beginners
+		○ Issued: Nov 2024
+		○ Credential ID: UC-4b7934c1-df3c-4291-9c80-62da15f6a3af
+		○ Skills: Large Language Models (LLM), Prompt Engineering, Generative AI, Generative AI Tools, Artificial Intelligence (AI)
+	2. Introduction to Generative AI and Prompt Engineering
+		○ Issued: Oct 2024
+		○ Credential ID: 11372998
+		○ Skills: Prompt Engineering, Generative AI, Artificial Intelligence (AI)
+	3. Prompt Engineering for Git: Leveraging Prompt Engineering to Learn Git
+	4. Blockchain and its Applications
+		○ Issued: Apr 2024
+		○ Institution: NPTEL
+		○ Skills: Blockchain
+	5. NVIDIA DLI Certificate - Fundamentals of Accelerated Computing with CUDA C/C++
+		○ Issued: Oct 2023
+		○ Institution: NVIDIA Deep Learning Institute
+		○ Credential ID: lvJd0zL0RlSjzSQlEwMfjg
+		○ Skills: CUDA
+
+Personal Details
+Languages
+	• English: Full Professional Proficiency
+	• Hindi: Native/Bilingual Proficiency
+	• Marathi: Native/Bilingual Proficiency
+	• Sanskrit: Elementary Proficiency
+Hobbies and Interests
+	• Sports: Enthusiastic football player; led school team to multiple competitions.
+	• Writing: Known for clear, skillful handwriting, participated in handwriting competitions.
+	• Learning: Passionate about emerging technologies, particularly AI and cybersecurity.
+
+Strengths
+	• Strong problem-solving skills with a creative mindset.
+	• Excellent communication and teamwork abilities.
+	• Leadership skills and ability to inspire team collaboration.
+	• Time management and critical thinking expertise.
+Dedicated to continuous learning and professional growth.
