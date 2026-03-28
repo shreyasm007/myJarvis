@@ -20,6 +20,7 @@ from backend.api.schemas import (
     Source,
 )
 from backend.core.exceptions import RAGException
+from backend.core.logging_config import get_logger
 from backend.services.conversation_logger import get_conversation_logger_service
 from backend.config import get_settings
 from backend.core.limiter import limiter
@@ -44,29 +45,29 @@ async def health_check():
 
 @router.post("/chat", response_model=ChatResponse)
 @limiter.limit("25/minute")
-async def chat(request: ChatRequest, http_request: Request):
+async def chat(chat_request: ChatRequest, request: Request):
     """
     Process a chat message and return a response.
     
     Args:
-        request: Chat request with user message
-        http_request: HTTP request for client info
+        chat_request: Chat request with user message
+        request: HTTP request for client info
         
     Returns:
         Chat response with answer and sources
     """
     start_time = time.time()
-    conversation_id = request.conversation_id or str(uuid4())
+    conversation_id = chat_request.conversation_id or str(uuid4())
     
     # Get conversation logger
     conv_logger = get_conversation_logger_service()
     
     # Log query start
     client_info = {
-        "ip": http_request.client.host if http_request.client else None,
-        "user_agent": http_request.headers.get("user-agent"),
+        "ip": request.client.host if request.client else None,
+        "user_agent": request.headers.get("user-agent"),
     }
-    conv_logger.log_query_start(conversation_id, request.message, client_info)
+    conv_logger.log_query_start(conversation_id, chat_request.message, client_info)
     
     logger.info(f"Received chat request (conversation_id={conversation_id})")
     
@@ -74,13 +75,13 @@ async def chat(request: ChatRequest, http_request: Request):
         # Convert chat history to dict format
         chat_history = [
             {"role": msg.role, "content": msg.content}
-            for msg in request.chat_history
-        ] if request.chat_history else []
+            for msg in chat_request.chat_history
+        ] if chat_request.chat_history else []
         
         # Process query through RAG chain
         rag_chain = get_rag_chain()
         result = rag_chain.process_query(
-            query=request.message,
+            query=chat_request.message,
             conversation_id=conversation_id,
             chat_history=chat_history,
         )
@@ -95,7 +96,7 @@ async def chat(request: ChatRequest, http_request: Request):
         # Log conversation
         conv_logger.log_conversation(
             conversation_id=conv_id,
-            query=request.message,
+            query=chat_request.message,
             response=response_text,
             sources=[s.model_dump() for s in sources],
             metadata=client_info,
@@ -116,7 +117,7 @@ async def chat(request: ChatRequest, http_request: Request):
             conversation_id=conversation_id,
             error_type=type(e).__name__,
             error_message=e.message,
-            query=request.message,
+            query=chat_request.message,
         )
         conv_logger.log_query_complete(
             conversation_id, duration_ms, success=False, error_message=e.message
@@ -131,7 +132,7 @@ async def chat(request: ChatRequest, http_request: Request):
             conversation_id=conversation_id,
             error_type="UnexpectedError",
             error_message=str(e),
-            query=request.message,
+            query=chat_request.message,
         )
         conv_logger.log_query_complete(
             conversation_id, duration_ms, success=False, error_message=str(e)
@@ -143,7 +144,7 @@ async def chat(request: ChatRequest, http_request: Request):
 
 @router.post("/chat/stream")
 @limiter.limit("25/minute")
-async def chat_stream(request: ChatRequest, http_request: Request):
+async def chat_stream(chat_request: ChatRequest, request: Request):
     """
     Process a chat message and stream the response.
     
@@ -154,17 +155,17 @@ async def chat_stream(request: ChatRequest, http_request: Request):
     Returns:
         Streaming response with answer chunks
     """
-    conversation_id = request.conversation_id or str(uuid4())
+    conversation_id = chat_request.conversation_id or str(uuid4())
     
     # Get conversation logger
     conv_logger = get_conversation_logger_service()
     
     # Log query start
     client_info = {
-        "ip": http_request.client.host if http_request.client else None,
-        "user_agent": http_request.headers.get("user-agent"),
+        "ip": request.client.host if request.client else None,
+        "user_agent": request.headers.get("user-agent"),
     }
-    conv_logger.log_query_start(conversation_id, request.message, client_info)
+    conv_logger.log_query_start(conversation_id, chat_request.message, client_info)
     
     logger.info(f"Received streaming chat request (conversation_id={conversation_id})")
     
@@ -177,13 +178,13 @@ async def chat_stream(request: ChatRequest, http_request: Request):
             # Convert chat history to dict format
             chat_history = [
                 {"role": msg.role, "content": msg.content}
-                for msg in request.chat_history
-            ] if request.chat_history else []
+                for msg in chat_request.chat_history
+            ] if chat_request.chat_history else []
             
             rag_chain = get_rag_chain()
             
             for chunk, is_final, conv_id, chunk_sources in rag_chain.process_query_stream(
-                query=request.message,
+                query=chat_request.message,
                 conversation_id=conversation_id,
                 chat_history=chat_history,
             ):
@@ -199,7 +200,7 @@ async def chat_stream(request: ChatRequest, http_request: Request):
             duration_ms = (time.time() - start_time) * 1000
             conv_logger.log_conversation(
                 conversation_id=conversation_id,
-                query=request.message,
+                query=chat_request.message,
                 response=full_response,
                 sources=[s.model_dump() for s in sources],
                 metadata=client_info,
@@ -214,7 +215,7 @@ async def chat_stream(request: ChatRequest, http_request: Request):
                 conversation_id=conversation_id,
                 error_type=type(e).__name__,
                 error_message=str(e),
-                query=request.message,
+                query=chat_request.message,
             )
             conv_logger.log_query_complete(
                 conversation_id, duration_ms, success=False, error_message=str(e)

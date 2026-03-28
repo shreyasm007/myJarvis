@@ -9,6 +9,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -68,7 +70,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["X-Conversation-ID"],
 )
@@ -144,12 +146,6 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 # Include API routes
 app.include_router(router, prefix="/api/v1", tags=["chat"])
-
-# Mount widget static files
-widget_path = Path(__file__).parent.parent / "widget"
-if widget_path.exists():
-    app.mount("/widget", StaticFiles(directory=str(widget_path)), name="widget")
-    logger.info(f"Widget mounted at /widget from {widget_path}")
 
 
 @app.get("/")
