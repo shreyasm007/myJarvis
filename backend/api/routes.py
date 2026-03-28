@@ -20,12 +20,14 @@ from backend.api.schemas import (
     Source,
 )
 from backend.core.exceptions import RAGException
-from backend.core.logging_config import get_logger
-from backend.rag.chain import get_rag_chain
-from backend.rag.vectorstore import get_vectorstore_client
 from backend.services.conversation_logger import get_conversation_logger_service
+from backend.config import get_settings
+from backend.core.limiter import limiter
+from backend.rag.chain import get_rag_chain
 
 logger = get_logger(__name__)
+# Get settings to check environment
+settings = get_settings()
 router = APIRouter()
 
 
@@ -41,6 +43,7 @@ async def health_check():
 
 
 @router.post("/chat", response_model=ChatResponse)
+@limiter.limit("25/minute")
 async def chat(request: ChatRequest, http_request: Request):
     """
     Process a chat message and return a response.
@@ -139,6 +142,7 @@ async def chat(request: ChatRequest, http_request: Request):
 
 
 @router.post("/chat/stream")
+@limiter.limit("25/minute")
 async def chat_stream(request: ChatRequest, http_request: Request):
     """
     Process a chat message and stream the response.
@@ -238,6 +242,11 @@ async def get_stats():
     Returns:
         Collection statistics
     """
+    # Only allow stats in development mode or with a specific check
+    if settings.is_production:
+        logger.warning("Stats endpoint accessed in production - access denied")
+        raise HTTPException(status_code=403, detail="Access denied")
+        
     try:
         vectorstore = get_vectorstore_client()
         info = vectorstore.get_collection_info()

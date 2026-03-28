@@ -9,12 +9,14 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from backend.api.routes import router
 from backend.config import get_settings
+from backend.core.limiter import limiter
 from backend.core.exceptions import RAGException
 from backend.core.logging_config import get_logger, setup_logging
 from backend.core.proxy_config import configure_proxy
@@ -46,7 +48,6 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down RAG Chatbot API")
 
-
 # Create FastAPI application
 app = FastAPI(
     title="Portfolio RAG Chatbot API",
@@ -56,6 +57,11 @@ app = FastAPI(
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
 )
+
+# Add rate limiter state and handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Configure CORS
 app.add_middleware(
@@ -112,11 +118,13 @@ async def logging_middleware(request: Request, call_next):
 async def rag_exception_handler(request: Request, exc: RAGException):
     """Handle RAG-specific exceptions."""
     logger.error(f"RAG Exception: {exc.message}", extra=exc.details)
+    
+    # Sanitize response in production: hide detailed error info from client
     return JSONResponse(
         status_code=500,
         content={
-            "error": exc.message,
-            "detail": exc.details,
+            "error": exc.message if not settings.is_production else "An error occurred while processing your request",
+            "detail": exc.details if not settings.is_production else None,
         },
     )
 
