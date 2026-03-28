@@ -38,8 +38,7 @@ See [REDIS_SETUP.md](REDIS_SETUP.md) for detailed Redis installation instruction
 
 ```powershell
 # Terminal 1
-cd 'C:\Program Files\Repos\learning projects\myJarvis'
-.venv\Scripts\activate
+venv\Scripts\activate
 uvicorn backend.main:app --reload
 ```
 
@@ -52,8 +51,7 @@ uvicorn backend.main:app --reload
 
 ```powershell
 # Terminal 2 (new terminal)
-cd 'C:\Program Files\Repos\learning projects\myJarvis'
-.venv\Scripts\activate
+venv\Scripts\activate
 streamlit run app.py
 ```
 
