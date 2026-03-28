@@ -4,7 +4,12 @@ Redis service for caching.
 Provides Redis connection management and utilities.
 """
 
-import redis
+try:
+    import redis
+    HAS_REDIS = True
+except ImportError:
+    HAS_REDIS = False
+
 from typing import Optional
 
 from backend.core.logging_config import get_logger
@@ -28,6 +33,11 @@ class RedisService:
     
     def _connect(self):
         """Establish Redis connection."""
+        if not HAS_REDIS:
+            logger.info("Redis package not installed. Caching disabled.")
+            self.client = None
+            return
+
         try:
             self.client = redis.from_url(
                 self.redis_url,

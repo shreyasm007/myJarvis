@@ -8,7 +8,12 @@ import hashlib
 import json
 from typing import List, Optional
 
-import redis
+try:
+    import redis
+    HAS_REDIS = True
+except ImportError:
+    HAS_REDIS = False
+
 import voyageai
 
 from backend.config import get_settings
@@ -34,13 +39,14 @@ class EmbeddingsClient:
         self.use_cache = use_cache
         
         # Initialize Redis cache
-        if use_cache:
+        if use_cache and HAS_REDIS:
             try:
                 redis_url = redis_url or "redis://localhost:6379/0"
                 self.redis_client = redis.from_url(
                     redis_url,
                     decode_responses=False,  # Store binary data
                     socket_connect_timeout=2,
+                    socket_timeout=2,
                 )
                 # Test connection
                 self.redis_client.ping()
