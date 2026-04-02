@@ -13,7 +13,6 @@ RUN pip install --no-cache-dir -r requirements-deploy.txt
 
 # Copy application code
 COPY backend/ ./backend/
-COPY widget/ ./widget/
 
 # Create logs directory
 RUN mkdir -p logs
