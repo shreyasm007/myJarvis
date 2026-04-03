@@ -66,7 +66,7 @@ class Settings(BaseSettings):
     
     # RAG Settings
     rag_top_k: int = Field(
-        default=5,
+        default=7,
         description="Number of documents to retrieve",
     )
     rag_score_threshold: float = Field(
