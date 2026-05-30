@@ -6,6 +6,9 @@ on:
       - main  # Auto-deploy whenever you push to main
   workflow_dispatch:  # Allow manual trigger from GitHub UI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Fix Node.js 20 deprecation warning
+
 jobs:
   deploy:
     name: Push to HuggingFace Space
@@ -17,6 +20,16 @@ jobs:
         with:
           fetch-depth: 0  # Full history needed for proper git push
 
+      - name: Validate HF_TOKEN secret
+        run: |
+          if [ -z "${{ secrets.HF_TOKEN }}" ]; then
+            echo "ERROR: HF_TOKEN secret is not set!"
+            echo "Go to: github.com/shreyasm007/myJarvis/settings/secrets/actions"
+            echo "Add a secret named HF_TOKEN with your HuggingFace write token."
+            exit 1
+          fi
+          echo "HF_TOKEN is set, proceeding with deployment..."
+
       - name: Configure Git
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -24,7 +37,8 @@ jobs:
 
       - name: Push to HuggingFace Space
         run: |
-          # Embed HF token into the remote URL for authentication
+          echo "Deploying to HuggingFace Space: shreyasm007/myJarvis"
           git push https://shreyasm007:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/shreyasm007/myJarvis main --force
+          echo "Deployment successful!"
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
