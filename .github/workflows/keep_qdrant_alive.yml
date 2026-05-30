@@ -2,8 +2,8 @@ name: Keep Qdrant Alive
 
 on:
   schedule:
-    # Runs every 5 days at midnight UTC (free tier deletes after ~7 days inactivity)
-    - cron: '0 0 */5 * *'
+    # Runs every 6 days at midnight UTC (free tier deletes after ~7 days inactivity)
+    - cron: '0 0 */6 * *'
   workflow_dispatch: # Allow manual trigger from GitHub Actions UI
 
 jobs:
