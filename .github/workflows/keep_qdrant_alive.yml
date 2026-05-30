@@ -1,0 +1,53 @@
+name: Keep Qdrant Alive
+
+on:
+  schedule:
+    # Runs every 5 days at midnight UTC (free tier deletes after ~7 days inactivity)
+    - cron: '0 0 */5 * *'
+  workflow_dispatch: # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  ping-qdrant:
+    name: Ping Qdrant Cluster
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Qdrant Collections Endpoint
+        run: |
+          echo "Pinging Qdrant cluster to keep it alive..."
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "api-key: ${{ secrets.QDRANT_API_KEY }}" \
+            "${{ secrets.QDRANT_URL }}/collections")
+
+          echo "Response status: $RESPONSE"
+
+          if [ "$RESPONSE" -eq 200 ]; then
+            echo "✅ Qdrant cluster is alive and responding."
+          else
+            echo "❌ Unexpected response: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Check Collection Stats
+        run: |
+          echo "Checking 'portfolio' collection stats..."
+
+          RESPONSE=$(curl -s \
+            -H "api-key: ${{ secrets.QDRANT_API_KEY }}" \
+            "${{ secrets.QDRANT_URL }}/collections/portfolio")
+
+          echo "$RESPONSE"
+
+          # Check if the collection exists and has points
+          POINTS=$(echo "$RESPONSE" | python3 -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              count = data.get('result', {}).get('points_count', 'unknown')
+              print(f'Points in collection: {count}')
+          except Exception as e:
+              print(f'Could not parse response: {e}')
+          ")
+
+          echo "$POINTS"
