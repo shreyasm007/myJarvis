@@ -2,8 +2,8 @@ name: Keep Qdrant Alive
 
 on:
   schedule:
-    # Run every 6 days - within Qdrant's 7-day inactivity window
-    - cron: '0 0 */6 * *'
+    # Run every 5 days - safely within Qdrant's 7-day inactivity window
+    - cron: '0 0 */5 * *'
   workflow_dispatch: # Allow manual trigger from GitHub Actions UI
 
 jobs:
