@@ -2,7 +2,7 @@ name: Keep Qdrant Alive
 
 on:
   schedule:
-    # Runs every 6 days at midnight UTC (free tier deletes after ~7 days inactivity)
+    # Run every 6 days - within Qdrant's 7-day inactivity window
     - cron: '0 0 */6 * *'
   workflow_dispatch: # Allow manual trigger from GitHub Actions UI
 
@@ -12,42 +12,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ping Qdrant Collections Endpoint
+      - name: Ping cluster (control plane)
         run: |
-          echo "Pinging Qdrant cluster to keep it alive..."
+          echo "Step 1: Pinging Qdrant cluster..."
 
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "api-key: ${{ secrets.QDRANT_API_KEY }}" \
             "${{ secrets.QDRANT_URL }}/collections")
 
-          echo "Response status: $RESPONSE"
+          echo "Collections endpoint status: $RESPONSE"
 
-          if [ "$RESPONSE" -eq 200 ]; then
-            echo "✅ Qdrant cluster is alive and responding."
-          else
-            echo "❌ Unexpected response: $RESPONSE"
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "Cluster not reachable (status $RESPONSE). It may be suspended."
             exit 1
           fi
+          echo "Cluster is up."
 
-      - name: Check Collection Stats
+      - name: Scroll collection (data plane - resets inactivity timer)
         run: |
-          echo "Checking 'portfolio' collection stats..."
+          echo "Step 2: Performing scroll on portfolio collection..."
 
-          RESPONSE=$(curl -s \
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
             -H "api-key: ${{ secrets.QDRANT_API_KEY }}" \
-            "${{ secrets.QDRANT_URL }}/collections/portfolio")
+            -H "Content-Type: application/json" \
+            -d '{"limit": 1, "with_payload": false, "with_vector": false}' \
+            "${{ secrets.QDRANT_URL }}/collections/portfolio/points/scroll")
 
-          echo "$RESPONSE"
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
 
-          # Check if the collection exists and has points
-          POINTS=$(echo "$RESPONSE" | python3 -c "
-          import sys, json
-          try:
-              data = json.load(sys.stdin)
-              count = data.get('result', {}).get('points_count', 'unknown')
-              print(f'Points in collection: {count}')
-          except Exception as e:
-              print(f'Could not parse response: {e}')
-          ")
+          echo "Scroll response status: $HTTP_CODE"
 
-          echo "$POINTS"
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "$BODY" | python3 -c "import sys,json; data=json.load(sys.stdin); pts=data.get('result',{}).get('points',[]); print(f'Retrieved {len(pts)} point(s). Inactivity timer reset.')"
+          else
+            echo "Scroll failed (status $HTTP_CODE): $BODY"
+            exit 1
+          fi
