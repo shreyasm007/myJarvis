@@ -12,41 +12,64 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ping cluster (control plane)
+      - name: Ping and Heartbeat Upsert (resets inactivity timer)
+        env:
+          QDRANT_URL: ${{ secrets.QDRANT_URL }}
+          QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
         run: |
-          echo "Step 1: Pinging Qdrant cluster..."
+          python3 << 'EOF'
+          import urllib.request
+          import json
+          import os
+          import sys
 
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "api-key: ${{ secrets.QDRANT_API_KEY }}" \
-            "${{ secrets.QDRANT_URL }}/collections")
+          url = os.environ["QDRANT_URL"]
+          api_key = os.environ["QDRANT_API_KEY"]
 
-          echo "Collections endpoint status: $RESPONSE"
+          if not url or not api_key:
+              print("Error: QDRANT_URL or QDRANT_API_KEY environment variables are missing.")
+              sys.exit(1)
 
-          if [ "$RESPONSE" -ne 200 ]; then
-            echo "Cluster not reachable (status $RESPONSE). It may be suspended."
-            exit 1
-          fi
-          echo "Cluster is up."
+          print("Step 1: Pinging Qdrant control plane...")
+          req_ping = urllib.request.Request(
+              f"{url}/collections",
+              headers={"api-key": api_key}
+          )
+          try:
+              with urllib.request.urlopen(req_ping) as response:
+                  print("Ping status:", response.status)
+          except Exception as e:
+              print("Ping failed:", e)
+              sys.exit(1)
 
-      - name: Scroll collection (data plane - resets inactivity timer)
-        run: |
-          echo "Step 2: Performing scroll on portfolio collection..."
-
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
-            -X POST \
-            -H "api-key: ${{ secrets.QDRANT_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"limit": 1, "with_payload": false, "with_vector": false}' \
-            "${{ secrets.QDRANT_URL }}/collections/portfolio/points/scroll")
-
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | head -n-1)
-
-          echo "Scroll response status: $HTTP_CODE"
-
-          if [ "$HTTP_CODE" -eq 200 ]; then
-            echo "$BODY" | python3 -c "import sys,json; data=json.load(sys.stdin); pts=data.get('result',{}).get('points',[]); print(f'Retrieved {len(pts)} point(s). Inactivity timer reset.')"
-          else
-            echo "Scroll failed (status $HTTP_CODE): $BODY"
-            exit 1
-          fi
+          print("\nStep 2: Performing upsert write operation (resets inactivity timer)...")
+          # 512-dimension vector matching portfolio collection schema
+          dummy_vector = [0.0] * 512
+          payload = {
+              "points": [
+                  {
+                      "id": "00000000-0000-0000-0000-000000000000",
+                      "vector": dummy_vector,
+                      "payload": {"is_keep_alive": True}
+                  }
+              ]
+          }
+          req_upsert = urllib.request.Request(
+              f"{url}/collections/portfolio/points?wait=true",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "api-key": api_key,
+                  "Content-Type": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              method="PUT"
+          )
+          try:
+              with urllib.request.urlopen(req_upsert) as response:
+                  print("Upsert status:", response.status)
+                  print("Upsert response:", response.read().decode("utf-8"))
+                  print("✅ Inactivity timer reset successfully.")
+          except Exception as e:
+              print("Upsert failed:", e)
+              sys.exit(1)
+          EOF
